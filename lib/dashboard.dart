@@ -1,18 +1,19 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 
-class DashboardView extends StatelessWidget {
+class DashboardView extends StatefulWidget {
   final String userName;
 
   const DashboardView({super.key, required this.userName});
+  @override
+  State<DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends State<DashboardView> {
+  final _future = Supabase.instance.client.from('tasks').select('*');
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> events = [
-      {'title': 'Person XR', 'email': 'person@test.com'},
-      {'title': 'Person RFS', 'email': 'person@test.com'},
-      {'title': 'PERSON X24', 'email': 'person@test.com'},
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -26,29 +27,39 @@ class DashboardView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome, $userName!',
+                  'Welcome, ${widget.userName}!',
                   style: const TextStyle(fontSize: 24),
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'All Users',
+                  'All Tasks',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
               ],
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: events.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(events[index]['title']!),
-                      subtitle: Text('${events[index]['email']}'),
-                      leading: const Icon(Icons.person),
-                    ),
+              child: FutureBuilder(
+                future: _future,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: LinearProgressIndicator());
+                  }
+                  final tasks = snapshot.data!;
+                  return ListView.builder(
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
+                      return Card(
+                        elevation: 3,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          title: Text(task['name']),
+                          subtitle: Text('${task['status']}'),
+                          leading: const Icon(Icons.check_circle_rounded),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
